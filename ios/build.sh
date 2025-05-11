@@ -1,0 +1,2 @@
+CGO_ENABLED=1 GOOS=ios GOARCH=arm64 CC=$(realpath ios/clangwrap.sh) go build -ldflags="-s -w" -trimpath -o ipapatch.ios-arm64
+$(xcrun -find codesign) --entitlements ios/ent.plist -s - -f ipapatch.ios-arm64
