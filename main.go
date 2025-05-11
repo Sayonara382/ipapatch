@@ -14,14 +14,6 @@ import (
 //go:embed resources/zxPluginsInject.dylib
 var zxPluginsInject embed.FS
 
-type Args struct {
-	Input     string `arg:"--input,required"`
-	Output    string `arg:"--output"`
-	Dylib     string `arg:"--dylib"`
-	InPlace   bool   `arg:"--inplace"`
-	NoConfirm bool   `arg:"--noconfirm"`
-}
-
 func main() {
 	if _, err := exec.LookPath("zip"); err != nil {
 		logger.Fatal("zip command not found in PATH, you need to install it")
@@ -33,7 +25,7 @@ func main() {
 			fmt.Println(helpText)
 			return
 		} else if errors.Is(err, arg.ErrVersion) {
-			fmt.Println(version)
+			fmt.Println(args.Version())
 			return
 		} else if args.Input == "" {
 			fmt.Println(helpText)

@@ -20,7 +20,17 @@ info:
   -h, --help        show usage and exit
   --version         show version and exit`
 
-const version = "ipapatch v1.0.0"
+type Args struct {
+	Input     string `arg:"--input,required"`
+	Output    string `arg:"--output"`
+	Dylib     string `arg:"--dylib"`
+	InPlace   bool   `arg:"--inplace"`
+	NoConfirm bool   `arg:"--noconfirm"`
+}
+
+func (Args) Version() string {
+	return "ipapatch v1.0.1"
+}
 
 func AskInteractively(question string) bool {
 	var reply string
