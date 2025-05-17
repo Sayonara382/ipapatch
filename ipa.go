@@ -24,7 +24,7 @@ func injectAll(args Args, tmpdir string) (map[string]string, error) {
 	}
 	defer z.Close()
 
-	plists, err := findPlists(z.File)
+	plists, err := findPlists(z.File, args.PluginsOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -60,18 +60,22 @@ func injectAll(args Args, tmpdir string) (map[string]string, error) {
 	return paths, nil
 }
 
-func findPlists(files []*zip.File) (plists []string, err error) {
+func findPlists(files []*zip.File, pluginsOnly bool) (plists []string, err error) {
 	plists = make([]string, 0, 10)
 
 	for _, f := range files {
-		if !(strings.HasSuffix(f.Name, ".app/Info.plist") || strings.HasSuffix(f.Name, ".appex/Info.plist")) {
+		if !pluginsOnly && strings.HasSuffix(f.Name, ".app/Info.plist") {
+			plists = append(plists, f.Name)
+			continue
+		}
+		if strings.HasSuffix(f.Name, ".appex/Info.plist") {
+			plists = append(plists, f.Name)
 			continue
 		}
 		if strings.Contains(f.Name, ".app/Watch") || strings.Contains(f.Name, ".app/WatchKit") || strings.Contains(f.Name, ".app/com.apple.WatchPlaceholder") {
 			logger.Infof("found watch app at '%s', you might want to remove that", filepath.Dir(f.Name))
 			continue
 		}
-		plists = append(plists, f.Name)
 	}
 
 	if len(plists) == 0 {

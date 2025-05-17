@@ -13,7 +13,7 @@ ipapatch only has 1 external dependency: the `zip` command. ipapatch actually co
 # usage
 ```bash
 $ ipapatch --help
-usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--version]
+usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--version]
 
 flags:
   --input path      the path to the ipa file to patch
@@ -21,6 +21,7 @@ flags:
   --dylib path      the path to the dylib to use instead of the embedded zxPluginsInject
   --inplace         takes priority over --output, use this to overwrite the input file
   --noconfirm       skip interactive confirmation when not using --inplace, overwriting a file that already exists, etc
+  --plugins-only    only inject into plugin binaries (not the main executable)
 
 info:
   -h, --help        show usage and exit

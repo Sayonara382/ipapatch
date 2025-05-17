@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const helpText = `usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--version]
+const helpText = `usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--version]
 
 flags:
   --input path      the path to the ipa file to patch
@@ -15,21 +15,23 @@ flags:
   --dylib path      the path to the dylib to use instead of the embedded zxPluginsInject
   --inplace         takes priority over --output, use this to overwrite the input file
   --noconfirm       skip interactive confirmation when not using --inplace, overwriting a file that already exists, etc
+  --plugins-only    only inject into plugin binaries (not the main executable)
 
 info:
   -h, --help        show usage and exit
   --version         show version and exit`
 
 type Args struct {
-	Input     string `arg:"--input,required"`
-	Output    string `arg:"--output"`
-	Dylib     string `arg:"--dylib"`
-	InPlace   bool   `arg:"--inplace"`
-	NoConfirm bool   `arg:"--noconfirm"`
+	Input       string `arg:"--input,required"`
+	Output      string `arg:"--output"`
+	Dylib       string `arg:"--dylib"`
+	InPlace     bool   `arg:"--inplace"`
+	NoConfirm   bool   `arg:"--noconfirm"`
+	PluginsOnly bool   `arg:"--plugins-only"`
 }
 
 func (Args) Version() string {
-	return "ipapatch v1.1.0"
+	return "ipapatch v1.1.1"
 }
 
 func AskInteractively(question string) bool {
