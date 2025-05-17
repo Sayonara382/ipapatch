@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -9,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mholt/archives"
+	"github.com/STARRY-S/zip"
 )
 
 // Patch patches the executable and all plugins.
@@ -57,37 +56,34 @@ func Patch(args Args) error {
 	}
 	defer o.Close()
 
-	ctx := context.Background()
-	ffd, err := archives.FilesFromDisk(ctx, nil, paths)
+	ud, err := zip.NewUpdater(o)
 	if err != nil {
-		return fmt.Errorf("FilesFromDisk err: %w", err)
+		return err
+	}
+	defer ud.Close()
+
+	for sysPath, zippedPath := range paths {
+		if err = appendFileToUpdater(ud, sysPath, zippedPath); err != nil {
+			return err
+		}
 	}
 
 	if args.Dylib != "" {
-		ffdDylib, err := archives.FilesFromDisk(
-			ctx, nil,
-			map[string]string{
-				args.Dylib: fmt.Sprintf("Payload/%s/Frameworks/%s", appName, filepath.Base(args.Dylib)),
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("FilesFromDisk err (--dylib): %w", err)
-		}
-
-		ffd = append(ffd, ffdDylib...)
-	} else {
-		ffd = append(ffd, archives.FileInfo{
-			FileInfo:      zxPluginsInjectInfo{},
-			NameInArchive: fmt.Sprintf("Payload/%s/Frameworks/zxPluginsInject.dylib", appName),
-			Open:          zxPluginsInjectOpen,
-		})
+		return appendFileToUpdater(ud, args.Dylib, fmt.Sprintf("Payload/%s/Frameworks/%s", appName, filepath.Base(args.Dylib)))
 	}
 
-	if err = (archives.Zip{}).Insert(ctx, o, ffd); err != nil {
-		return fmt.Errorf("error inserting files back into ipa: %w", err)
+	zxpi, err := zxPluginsInject.Open("resources/zxPluginsInject.dylib")
+	if err != nil {
+		return err
 	}
+	defer zxpi.Close()
 
-	return nil
+	return appendToUpdater(
+		ud,
+		fmt.Sprintf("Payload/%s/Frameworks/zxPluginsInject.dylib", appName),
+		zxPluginsInjectInfo{},
+		zxpi,
+	)
 }
 
 func copyfile(from, to string) error {

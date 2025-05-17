@@ -30,7 +30,3 @@ func (zxPluginsInjectInfo) IsDir() bool {
 func (zxPluginsInjectInfo) Sys() any {
 	return nil
 }
-
-func zxPluginsInjectOpen() (fs.File, error) {
-	return zxPluginsInject.Open("resources/zxPluginsInject.dylib")
-}

@@ -1,14 +1,15 @@
 package main
 
 import (
-	"archive/zip"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/STARRY-S/zip"
 	"howett.net/plist"
 )
 
@@ -109,7 +110,7 @@ func extractToPath(z *zip.ReadCloser, dir, name string) (string, error) {
 	defer f.Close()
 
 	output := filepath.Join(dir, filepath.Base(name))
-	ff, err := os.OpenFile(output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0700)
+	ff, err := os.OpenFile(output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0755)
 	if err != nil {
 		return "", err
 	}
@@ -117,4 +118,37 @@ func extractToPath(z *zip.ReadCloser, dir, name string) (string, error) {
 
 	_, err = io.Copy(ff, f)
 	return output, err
+}
+
+func appendFileToUpdater(ud *zip.Updater, path, zippedPath string) error {
+	o, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer o.Close()
+
+	fi, err := o.Stat()
+	if err != nil {
+		return err
+	}
+
+	return appendToUpdater(ud, zippedPath, fi, o)
+}
+
+func appendToUpdater(ud *zip.Updater, zippedPath string, fi fs.FileInfo, r io.Reader) error {
+	hdr, err := zip.FileInfoHeader(fi)
+	if err != nil {
+		return err
+	}
+
+	hdr.Name = zippedPath
+	hdr.Method = zip.Deflate
+
+	w, err := ud.AppendHeader(hdr, zip.APPEND_MODE_OVERWRITE)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(w, r)
+	return err
 }
