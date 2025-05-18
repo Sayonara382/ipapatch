@@ -31,7 +31,7 @@ type Args struct {
 }
 
 func (Args) Version() string {
-	return "ipapatch v1.1.1"
+	return "ipapatch v1.1.2"
 }
 
 func AskInteractively(question string) bool {
