@@ -67,5 +67,6 @@ func main() {
 
 	if err := Patch(args); err != nil {
 		logger.Log(zapcore.ErrorLevel, err)
+		os.Exit(1)
 	}
 }
