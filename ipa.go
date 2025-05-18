@@ -13,7 +13,10 @@ import (
 	"howett.net/plist"
 )
 
-var ErrNoPlist = errors.New("no Info.plist found in ipa")
+var (
+	ErrNoPlist   = errors.New("no Info.plist found in ipa")
+	ErrNoPlugins = errors.New("no plugins found")
+)
 
 // key - path to file in provided tmpdir, now patched
 // val - path inside ipa
@@ -79,6 +82,9 @@ func findPlists(files []*zip.File, pluginsOnly bool) (plists []string, err error
 	}
 
 	if len(plists) == 0 {
+		if pluginsOnly {
+			return nil, ErrNoPlugins
+		}
 		return nil, ErrNoPlist
 	}
 	return plists, nil
