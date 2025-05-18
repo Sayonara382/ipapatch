@@ -68,14 +68,14 @@ func findPlists(files []*zip.File, pluginsOnly bool) (plists []string, err error
 			plists = append(plists, f.Name)
 			continue
 		}
-		if strings.HasSuffix(f.Name, ".appex/Info.plist") {
-			plists = append(plists, f.Name)
+		if !strings.HasSuffix(f.Name, ".appex/Info.plist") {
 			continue
 		}
 		if strings.Contains(f.Name, ".app/Watch") || strings.Contains(f.Name, ".app/WatchKit") || strings.Contains(f.Name, ".app/com.apple.WatchPlaceholder") {
 			logger.Infof("found watch app at '%s', you might want to remove that", filepath.Dir(f.Name))
 			continue
 		}
+		plists = append(plists, f.Name)
 	}
 
 	if len(plists) == 0 {
