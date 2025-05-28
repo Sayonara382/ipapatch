@@ -7,19 +7,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const helpText = `usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--version]
+const helpText = `Usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--version]
 
-flags:
-  --input path      the path to the ipa file to patch
-  --output path     the path to the patched ipa file to create
-  --dylib path      the path to the dylib to use instead of the embedded zxPluginsInject
-  --inplace         takes priority over --output, use this to overwrite the input file
-  --noconfirm       skip interactive confirmation when not using --inplace, overwriting a file that already exists, etc
-  --plugins-only    only inject into plugin binaries (not the main executable)
+Flags:
+  --input path      The path to the ipa file to patch
+  --output path     The path to the patched ipa file to create
+  --dylib path      The path to the dylib to use instead of the embedded zxPluginsInject
+  --inplace         Takes priority over --output, use this to overwrite the input file
+  --noconfirm       Skip interactive confirmation when not using --inplace, overwriting a file that already exists, etc
+  --plugins-only    Only inject into plugin binaries (not the main executable)
 
-info:
-  -h, --help        show usage and exit
-  --version         show version and exit`
+Info:
+  -h, --help        Show usage and exit
+  --version         Show version and exit`
 
 type Args struct {
 	Input       string `arg:"--input,required"`
@@ -38,7 +38,7 @@ func AskInteractively(question string) bool {
 	var reply string
 	logger.Infof("%s [Y/n]", question)
 	if _, err := fmt.Scanln(&reply); err != nil && err.Error() != "unexpected newline" {
-		logger.Logw(zapcore.ErrorLevel, "couldnt scan reply", "err", err)
+		logger.Warnw("Input scan failed", "err", err)
 		return false
 	}
 	reply = strings.TrimSpace(reply)

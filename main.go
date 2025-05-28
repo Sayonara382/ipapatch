@@ -5,20 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/alexflint/go-arg"
 	"go.uber.org/zap/zapcore"
 )
 
-//go:embed resources/zxPluginsInject.dylib
 var zxPluginsInject embed.FS
 
 func main() {
-	if _, err := exec.LookPath("zip"); err != nil {
-		logger.Fatal("zip command not found in PATH, you need to install it")
-	}
-
 	var args Args
 	if err := arg.Parse(&args); err != nil {
 		if errors.Is(err, arg.ErrHelp) {
@@ -29,21 +23,22 @@ func main() {
 			return
 		} else if args.Input == "" {
 			fmt.Println(helpText)
-			fmt.Println("\nerror: --input is required")
+			logger.Error("Input file is required")
 			return
 		}
-		logger.Fatalf("%v (see --help for usage)", err)
+		logger.Fatalf("Argument parsing error: %v (see --help for usage)", err)
 	}
 
 	if args.InPlace {
-		logger.Info("--inplace specified, will overwrite input")
+		logger.Info("In-place mode: will overwrite input file")
 		args.Output = args.Input
 	}
 	if args.Output == "" {
 		if args.NoConfirm {
-			logger.Fatal("neither --output nor --inplace specified")
+			logger.Fatal("Neither --output nor --inplace specified")
 		}
 		if !AskInteractively("--inplace not specified, overwrite the input?") {
+			logger.Warn("User declined to overwrite input file")
 			return
 		}
 		args.Output = args.Input
@@ -53,6 +48,7 @@ func main() {
 			if args.NoConfirm {
 				logger.Info("--output already exists, overwriting")
 			} else if !AskInteractively("--output already exists, overwrite?") {
+				logger.Warn("User declined to overwrite output file")
 				return
 			}
 		}
@@ -61,12 +57,12 @@ func main() {
 	if args.Dylib != "" {
 		_, err := os.Stat(args.Dylib)
 		if os.IsNotExist(err) {
-			logger.Fatalw("path provided to --dylib doesnt exist", "path", args.Dylib)
+			logger.Fatalw("Dylib path does not exist", "path", args.Dylib)
 		}
 	}
 
 	if err := Patch(args); err != nil {
-		logger.Log(zapcore.ErrorLevel, err)
+		logger.Errorw("Patch failed", "error", err)
 		os.Exit(1)
 	}
 }

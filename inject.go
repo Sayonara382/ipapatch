@@ -16,7 +16,7 @@ var dylibCmdSize = binary.Size(types.DylibCmd{})
 func injectLC(fsPath, lcName, tmpdir string) error {
 	fat, err := macho.OpenFat(fsPath)
 	if err == nil {
-		defer fat.Close() // in case of returning early
+		defer fat.Close()
 
 		var slices []string
 		for _, arch := range fat.Arches {
@@ -26,32 +26,31 @@ func injectLC(fsPath, lcName, tmpdir string) error {
 
 			tmp, err := os.CreateTemp(tmpdir, "macho_"+arch.File.CPU.String())
 			if err != nil {
-				return fmt.Errorf("failed to create temp file: %w", err)
+				return fmt.Errorf("Create temp file: %w", err)
 			}
 			defer os.Remove(tmp.Name())
 
 			if err = arch.File.Save(tmp.Name()); err != nil {
-				return fmt.Errorf("failed to save temp file: %w", err)
+				return fmt.Errorf("Save temp file: %w", err)
 			}
 
 			if err = tmp.Close(); err != nil {
-				return fmt.Errorf("failed to close temp file: %w", err)
+				return fmt.Errorf("Close temp file: %w", err)
 			}
 
 			slices = append(slices, tmp.Name())
 		}
 		fat.Close()
 
-		// uses os.Create internally, the file will be truncated, everything is fine
 		ff, err := macho.CreateFat(fsPath, slices...)
 		if err != nil {
-			return fmt.Errorf("failed to create fat file: %w", err)
+			return fmt.Errorf("Create fat file: %w", err)
 		}
 		return ff.Close()
 	} else if errors.Is(err, macho.ErrNotFat) {
 		m, err := macho.Open(fsPath)
 		if err != nil {
-			return fmt.Errorf("failed to open MachO file: %w", err)
+			return fmt.Errorf("Open MachO: %w", err)
 		}
 		defer m.Close()
 
@@ -59,9 +58,8 @@ func injectLC(fsPath, lcName, tmpdir string) error {
 			return err
 		}
 
-		// uses WriteFile internally, it also truncates
 		if err = m.Save(fsPath); err != nil {
-			return fmt.Errorf("failed to save patched MachO file: %w", err)
+			return fmt.Errorf("Save patched MachO: %w", err)
 		}
 		return nil
 	}
@@ -76,7 +74,7 @@ func addDylibCommand(m *macho.File, name string) error {
 			continue
 		}
 		if strings.HasPrefix(lc.String(), name) {
-			return fmt.Errorf("load command '%s' already exists (already patched)", name)
+			return fmt.Errorf("Load command '%s' already exists", name)
 		}
 	}
 
@@ -88,7 +86,7 @@ func addDylibCommand(m *macho.File, name string) error {
 			LoadCmd:        types.LC_LOAD_WEAK_DYLIB,
 			Len:            pointerAlign(uint32(dylibCmdSize + len(name) + 1)),
 			NameOffset:     0x18,
-			Timestamp:      2, // TODO: I've only seen this value be 2
+			Timestamp:      2,
 			CurrentVersion: vers,
 			CompatVersion:  vers,
 		},

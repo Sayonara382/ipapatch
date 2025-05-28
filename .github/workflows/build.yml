@@ -1,0 +1,118 @@
+name: Build and Release ipapatch
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          go build -trimpath -o ipapatch.linux-amd64
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          go build -trimpath -o ipapatch.windows-amd64.exe
+
+      - name: Build (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          go build -trimpath -o ipapatch.darwin-arm64
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipapatch-${{ matrix.os }}
+          path: |
+            ipapatch.linux-amd64
+            ipapatch.windows-amd64.exe
+            ipapatch.darwin-arm64
+          if-no-files-found: ignore
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Gather release assets
+        id: gather_assets
+        run: |
+          echo "ASSETS=$(find dist -type f -name 'ipapatch*' | tr '\n' ' ')" >> $GITHUB_ENV
+
+      - name: Set tag and release name
+        id: set_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::set-output name=tag::${{ github.event.inputs.tag }}"
+          else
+            echo "::set-output name=tag::${{ github.ref_name }}"
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.set_tag.outputs.tag }}
+          release_name: ipapatch ${{ steps.set_tag.outputs.tag }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Linux binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/ipapatch-ubuntu-latest/ipapatch.linux-amd64
+          asset_name: ipapatch.linux-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/ipapatch-windows-latest/ipapatch.windows-amd64.exe
+          asset_name: ipapatch.windows-amd64.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/ipapatch-macos-latest/ipapatch.darwin-arm64
+          asset_name: ipapatch.darwin-arm64
+          asset_content_type: application/octet-stream 

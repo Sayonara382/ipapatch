@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/STARRY-S/zip"
 )
 
-// Patch patches the executable and all plugins.
 func Patch(args Args) error {
 	tmpdir, err := os.MkdirTemp(".", ".ipapatch-*")
 	if err != nil {
@@ -19,18 +17,16 @@ func Patch(args Args) error {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	//
-
-	logger.Info("extracting and injecting..")
+	logger.Info("Extracting and injecting")
 	paths, err := injectAll(args, tmpdir)
 	if err != nil {
-		return fmt.Errorf("error injecting: %w", err)
+		return fmt.Errorf("Injecting: %w", err)
 	}
 
 	if args.Output != args.Input {
-		logger.Info("copying input to output..")
+		logger.Info("Copying input to output")
 		if err = copyfile(args.Input, args.Output); err != nil {
-			return fmt.Errorf("failed to copy input to output: %w", err)
+			return fmt.Errorf("Copy input to output: %w", err)
 		}
 	}
 
@@ -41,15 +37,14 @@ func Patch(args Args) error {
 	}
 	appName := strings.Split(zipArgs[2], "/")[1]
 
-	err = exec.Command("zip", zipArgs...).Run()
-	if err != nil {
-		return fmt.Errorf("error deleting from zipfile: %w", err)
+	if len(paths) > 0 {
+		logger.Info("Removing old files from IPA")
+		if err := removeFilesFromZip(args.Output, paths); err != nil {
+			return fmt.Errorf("Delete from zipfile: %w", err)
+		}
 	}
 
-	//
-
-	logger.Info("adding files back to ipa..")
-
+	logger.Info("Adding files back to IPA")
 	o, err := os.OpenFile(args.Output, os.O_RDWR, 0)
 	if err != nil {
 		return err
@@ -101,4 +96,69 @@ func copyfile(from, to string) error {
 
 	_, err = io.Copy(f2, f1)
 	return err
+}
+
+func removeFilesFromZip(zipPath string, removePaths map[string]string) error {
+	orig, err := os.Open(zipPath)
+	if err != nil {
+		return err
+	}
+	defer orig.Close()
+
+	stat, err := orig.Stat()
+	if err != nil {
+		return err
+	}
+
+	r, err := zip.NewReader(orig, stat.Size())
+	if err != nil {
+		return err
+	}
+
+	tmpZip, err := os.CreateTemp(".", ".ipapatch-tmpzip-*")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		tmpZip.Close()
+		os.Remove(tmpZip.Name())
+	}()
+
+	w := zip.NewWriter(tmpZip)
+	defer w.Close()
+
+	removeSet := make(map[string]struct{}, len(removePaths))
+	for _, p := range removePaths {
+		removeSet[p] = struct{}{}
+	}
+
+	for _, f := range r.File {
+		if _, shouldRemove := removeSet[f.Name]; shouldRemove {
+			continue
+		}
+		fr, err := f.Open()
+		if err != nil {
+			return err
+		}
+		hdr := f.FileHeader
+		fw, err := w.CreateHeader(&hdr)
+		if err != nil {
+			fr.Close()
+			return err
+		}
+		_, err = io.Copy(fw, fr)
+		fr.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	w.Close()
+	tmpZip.Close()
+
+	orig.Close()
+	if err := os.Rename(tmpZip.Name(), zipPath); err != nil {
+		return err
+	}
+	return nil
 }

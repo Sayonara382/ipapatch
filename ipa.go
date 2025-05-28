@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -14,12 +15,10 @@ import (
 )
 
 var (
-	ErrNoPlist   = errors.New("no Info.plist found in ipa")
-	ErrNoPlugins = errors.New("no plugins found")
+	ErrNoPlist   = errors.New("No Info.plist found in ipa")
+	ErrNoPlugins = errors.New("No plugins found")
 )
 
-// key - path to file in provided tmpdir, now patched
-// val - path inside ipa
 func injectAll(args Args, tmpdir string) (map[string]string, error) {
 	z, err := zip.OpenReader(args.Input)
 	if err != nil {
@@ -46,18 +45,18 @@ func injectAll(args Args, tmpdir string) (map[string]string, error) {
 			return nil, err
 		}
 
-		path := filepath.Join(filepath.Dir(p), execName)
-		fsPath, err := extractToPath(z, tmpdir, path)
+		zipPath := path.Join(path.Dir(p), execName)
+		fsPath, err := extractToPath(z, tmpdir, zipPath)
 		if err != nil {
-			return nil, fmt.Errorf("error extracting %s: %w", execName, err)
+			return nil, fmt.Errorf("Extract %s: %w", execName, err)
 		}
 
-		logger.Infof("injecting into %s ..", execName)
+		logger.Infof("Injecting: %s", execName)
 		if err = injectLC(fsPath, lcName, tmpdir); err != nil {
-			return nil, fmt.Errorf("couldnt inject into %s: %w", execName, err)
+			return nil, fmt.Errorf("Inject %s: %w", execName, err)
 		}
 
-		paths[fsPath] = path
+		paths[fsPath] = zipPath
 	}
 
 	return paths, nil
@@ -68,7 +67,7 @@ func findPlists(files []*zip.File, pluginsOnly bool) (plists []string, err error
 
 	for _, f := range files {
 		if strings.Contains(f.Name, ".app/Watch") || strings.Contains(f.Name, ".app/WatchKit") || strings.Contains(f.Name, ".app/com.apple.WatchPlaceholder") {
-			logger.Infof("found watch app at '%s', you might want to remove that", filepath.Dir(f.Name))
+			logger.Warnf("Watch app found: %s", path.Dir(f.Name))
 			continue
 		}
 		if strings.HasSuffix(f.Name, ".appex/Info.plist") {
