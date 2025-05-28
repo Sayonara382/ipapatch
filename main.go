@@ -9,6 +9,7 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
+//go:embed resources/zxPluginsInject.dylib
 var zxPluginsInject embed.FS
 
 func main() {
