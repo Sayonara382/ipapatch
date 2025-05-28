@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"strings"
-
-	"go.uber.org/zap/zapcore"
 )
 
 const helpText = `Usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--version]

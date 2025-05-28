@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/alexflint/go-arg"
-	"go.uber.org/zap/zapcore"
 )
 
 var zxPluginsInject embed.FS
