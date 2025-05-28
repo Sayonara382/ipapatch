@@ -1,4 +1,4 @@
-# ipapatch
+# IPAPatch
 A CLI tool to patch IPAs and their plugins, fixing problems with the share sheet, widgets, VPNs, and more!
 
 It uses [zxPluginsInject](https://github.com/asdfzxcvbn/zxPluginsInject) by default, which is a rewrite of choco's original patch.
@@ -7,11 +7,11 @@ Due to being written in Go and having **native load command injection**, it's fu
 
 You can find the latest binaries on the [release page](https://github.com/Sayonara382/ipapatch/releases/latest).
 
-# requirements
+# Requirements
 - On **macOS** and **Linux**, ipapatch requires the `zip` command to be installed (available by default on most systems).
 - On **Windows**, no external zip command is required—everything works out of the box.
 
-# usage
+# Usage
 ```bash
 $ ipapatch --help
 Usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--version]
@@ -29,9 +29,9 @@ Info:
   --version         Show version and exit
 ```
 
-# credits
+# Credits
 Big thanks to:
 
 - Chocolate Fluffy for the original IPA patcher tweak.
 - blacktop for [ipsw](https://github.com/blacktop/ipsw) and [go-macho](https://github.com/blacktop/go-macho), making the native load command injection possible.
-- asdfzxcvbn for [ipapatch](https://github.com/asdfzxcvbn/ipapatch)
+- asdfzxcvbn for [ipapatch](https://github.com/asdfzxcvbn/ipapatch).
