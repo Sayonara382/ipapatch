@@ -72,6 +72,9 @@ func addDylibCommand(m *macho.File, name string) error {
 	for i := len(m.Loads) - 1; i >= 0; i-- {
 		lc := m.Loads[i]
 		cmd := lc.Command()
+		if cmd == types.LC_CODE_SIGNATURE {
+			m.RemoveLoad(lc)
+		}
 		if cmd != types.LC_LOAD_WEAK_DYLIB && cmd != types.LC_LOAD_DYLIB {
 			continue
 		}
