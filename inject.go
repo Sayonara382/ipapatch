@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/blacktop/go-macho"
+	"github.com/blacktop/go-macho/pkg/codesign"
+	cstypes "github.com/blacktop/go-macho/pkg/codesign/types"
 	"github.com/blacktop/go-macho/types"
 )
 
@@ -69,11 +71,13 @@ func injectLC(fsPath, lcName, tmpdir string) error {
 }
 
 func addDylibCommand(m *macho.File, name string) error {
+	var cs *macho.CodeSignature
 	for i := len(m.Loads) - 1; i >= 0; i-- {
 		lc := m.Loads[i]
 		cmd := lc.Command()
 		if cmd == types.LC_CODE_SIGNATURE {
 			m.RemoveLoad(lc)
+			cs = lc.(*macho.CodeSignature)
 		}
 		if cmd != types.LC_LOAD_WEAK_DYLIB && cmd != types.LC_LOAD_DYLIB {
 			continue
@@ -97,6 +101,15 @@ func addDylibCommand(m *macho.File, name string) error {
 		},
 		Name: name,
 	})
+	if cs != nil {
+		m.CodeSign(&codesign.Config{
+			Flags:           cstypes.ADHOC,
+			ID:              "fyi.zxcvbn.ipapatch.app", // this will be changed by the real codesigner anyway
+			Entitlements:    []byte(cs.Entitlements),
+			EntitlementsDER: cs.EntitlementsDER,
+			SpecialSlots:    []cstypes.SpecialSlot{{Hash: cstypes.EmptySha256Slot}}, // i think this was needed, found it in an old project
+		})
+	}
 	return nil
 }
 
