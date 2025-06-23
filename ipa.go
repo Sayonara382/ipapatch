@@ -13,6 +13,11 @@ import (
 	"howett.net/plist"
 )
 
+type PlistInfo struct {
+	Executable string `plist:"CFBundleExecutable"`
+	BundleID   string `plist:"CFBundleIdentifier"`
+}
+
 var (
 	ErrNoPlist   = errors.New("no Info.plist found in ipa")
 	ErrNoPlugins = errors.New("no plugins found")
@@ -41,20 +46,20 @@ func injectAll(args Args, tmpdir string) (map[string]string, error) {
 	}
 
 	for _, p := range plists {
-		execName, err := getExecutableName(z, p)
+		pl, err := getExecutableNames(z, p)
 		if err != nil {
 			return nil, err
 		}
 
-		path := filepath.Join(filepath.Dir(p), execName)
+		path := filepath.Join(filepath.Dir(p), pl.Executable)
 		fsPath, err := extractToPath(z, tmpdir, path)
 		if err != nil {
-			return nil, fmt.Errorf("error extracting %s: %w", execName, err)
+			return nil, fmt.Errorf("error extracting %s: %w", pl.Executable, err)
 		}
 
-		logger.Infof("injecting into %s ..", execName)
-		if err = injectLC(fsPath, lcName, tmpdir); err != nil {
-			return nil, fmt.Errorf("couldnt inject into %s: %w", execName, err)
+		logger.Infof("injecting into %s ..", pl.Executable)
+		if err = injectLC(fsPath, pl.BundleID, lcName, tmpdir); err != nil {
+			return nil, fmt.Errorf("couldnt inject into %s: %w", pl.Executable, err)
 		}
 
 		paths[fsPath] = path
@@ -90,26 +95,21 @@ func findPlists(files []*zip.File, pluginsOnly bool) (plists []string, err error
 	return plists, nil
 }
 
-func getExecutableName(z *zip.ReadCloser, plistName string) (string, error) {
+func getExecutableNames(z *zip.ReadCloser, plistName string) (*PlistInfo, error) {
 	f, err := z.Open(plistName)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer f.Close()
 
 	contents, err := io.ReadAll(f)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var pl struct {
-		Executable string `plist:"CFBundleExecutable"`
-	}
-	if _, err = plist.Unmarshal(contents, &pl); err != nil {
-		return "", err
-	}
-
-	return pl.Executable, nil
+	var pl PlistInfo
+	_, err = plist.Unmarshal(contents, &pl)
+	return &pl, err
 }
 
 func extractToPath(z *zip.ReadCloser, dir, name string) (string, error) {

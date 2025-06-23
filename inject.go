@@ -15,14 +15,14 @@ import (
 
 var dylibCmdSize = binary.Size(types.DylibCmd{})
 
-func injectLC(fsPath, lcName, tmpdir string) error {
+func injectLC(fsPath, bundleID, lcName, tmpdir string) error {
 	fat, err := macho.OpenFat(fsPath)
 	if err == nil {
 		defer fat.Close() // in case of returning early
 
 		var slices []string
 		for _, arch := range fat.Arches {
-			if err = addDylibCommand(arch.File, lcName); err != nil {
+			if err = addDylibCommand(arch.File, lcName, bundleID); err != nil {
 				return err
 			}
 
@@ -57,7 +57,7 @@ func injectLC(fsPath, lcName, tmpdir string) error {
 		}
 		defer m.Close()
 
-		if err = addDylibCommand(m, lcName); err != nil {
+		if err = addDylibCommand(m, lcName, bundleID); err != nil {
 			return err
 		}
 
@@ -70,7 +70,7 @@ func injectLC(fsPath, lcName, tmpdir string) error {
 	return err
 }
 
-func addDylibCommand(m *macho.File, name string) error {
+func addDylibCommand(m *macho.File, name, bundleID string) error {
 	var cs *macho.CodeSignature
 	for i := len(m.Loads) - 1; i >= 0; i-- {
 		lc := m.Loads[i]
@@ -102,9 +102,12 @@ func addDylibCommand(m *macho.File, name string) error {
 		Name: name,
 	})
 	if cs != nil {
+		if bundleID == "" {
+			bundleID = "fyi.zxcvbn.ipapatch.app" // shouldnt happen, but best to be safe
+		}
 		m.CodeSign(&codesign.Config{
 			Flags:           cstypes.ADHOC,
-			ID:              "fyi.zxcvbn.ipapatch.app", // this will be changed by the real codesigner anyway
+			ID:              bundleID,
 			Entitlements:    []byte(cs.Entitlements),
 			EntitlementsDER: cs.EntitlementsDER,
 			SpecialSlots:    []cstypes.SpecialSlot{{Hash: cstypes.EmptySha256Slot}}, // i think this was needed, found it in an old project
