@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/alexflint/go-arg"
 	"go.uber.org/zap/zapcore"
@@ -15,10 +14,6 @@ import (
 var zxPluginsInject embed.FS
 
 func main() {
-	if _, err := exec.LookPath("zip"); err != nil {
-		logger.Fatal("zip command not found in PATH, you need to install it")
-	}
-
 	var args Args
 	if err := arg.Parse(&args); err != nil {
 		if errors.Is(err, arg.ErrHelp) {
