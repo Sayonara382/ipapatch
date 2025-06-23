@@ -8,7 +8,9 @@ due to being written in go and having **native load command injection**, it's fu
 you can find the latest binaries on the [release page](https://github.com/asdfzxcvbn/ipapatch/releases/latest).
 
 # requirements
-ipapatch only has 1 external dependency: the `zip` command. ipapatch actually could be adjusted to not require it, but it would break some pretty obscure tools and iOS internals, and `zip` is practically available everywhere, so this shouldn't be an issue.
+~~ipapatch only has 1 external dependency: the `zip` command. ipapatch actually could be adjusted to not require it, but it would break some pretty obscure tools and iOS internals, and `zip` is practically available everywhere, so this shouldn't be an issue.~~
+
+v2.0.0 has removed the dependency on `zip`! i figured it would be nice to just test whether or not this will REALLY noticably break things. for now, ipapatch is a fully portable, native binary!
 
 # usage
 ```bash
