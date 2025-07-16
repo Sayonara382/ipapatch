@@ -3,9 +3,9 @@ module github.com/asdfzxcvbn/ipapatch
 go 1.24.3
 
 require (
-	github.com/STARRY-S/zip v0.2.1
-	github.com/alexflint/go-arg v1.5.1
-	github.com/blacktop/go-macho v1.1.245
+	github.com/STARRY-S/zip v0.2.3
+	github.com/alexflint/go-arg v1.6.0
+	github.com/blacktop/go-macho v1.1.249
 	go.uber.org/zap v1.27.0
 	howett.net/plist v1.0.1
 )

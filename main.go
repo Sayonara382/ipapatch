@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/alexflint/go-arg"
 	"go.uber.org/zap/zapcore"
@@ -30,6 +31,11 @@ func main() {
 		logger.Fatalf("%v (see --help for usage)", err)
 	}
 
+	if args.UseZip {
+		if _, err := exec.LookPath("zip"); err != nil {
+			logger.Fatal("zip command not found in PATH, you need to install it or omit --zip (see help)")
+		}
+	}
 	if args.InPlace {
 		logger.Info("--inplace specified, will overwrite input")
 		args.Output = args.Input

@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const helpText = `usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--version]
+const helpText = `usage: ipapatch [-h/--help] --input <path> [--output <path] [--dylib <path>] [--inplace] [--noconfirm] [--plugins-only] [--no-zip] [--version]
 
 flags:
   --input path      the path to the ipa file to patch
@@ -16,6 +16,7 @@ flags:
   --inplace         takes priority over --output, use this to overwrite the input file
   --noconfirm       skip interactive confirmation when not using --inplace, overwriting a file that already exists, etc
   --plugins-only    only inject into plugin binaries (not the main executable)
+  --zip             use the zip cli tool to remove files (shouldnt be needed anymore)
 
 info:
   -h, --help        show usage and exit
@@ -28,10 +29,11 @@ type Args struct {
 	InPlace     bool   `arg:"--inplace"`
 	NoConfirm   bool   `arg:"--noconfirm"`
 	PluginsOnly bool   `arg:"--plugins-only"`
+	UseZip      bool   `arg:"--zip"`
 }
 
 func (Args) Version() string {
-	return "ipapatch v2.0.0"
+	return "ipapatch v2.1.0"
 }
 
 func AskInteractively(question string) bool {

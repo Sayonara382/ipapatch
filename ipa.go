@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -51,7 +52,7 @@ func injectAll(args Args, tmpdir string) (map[string]string, error) {
 			return nil, err
 		}
 
-		path := filepath.Join(filepath.Dir(p), pl.Executable)
+		path := path.Join(path.Dir(p), pl.Executable)
 		fsPath, err := extractToPath(z, tmpdir, path)
 		if err != nil {
 			return nil, fmt.Errorf("error extracting %s: %w", pl.Executable, err)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -34,9 +35,21 @@ func Patch(args Args) error {
 	}
 
 	var appName string
-	for _, val := range paths {
-		appName = strings.Split(val, "/")[1] // yeah i couldnt figure out another way to do this lmao
-		break
+	if args.UseZip {
+		zipArgs := make([]string, 0, len(paths)+2)
+		zipArgs = append(zipArgs, "-d", args.Output)
+		for _, val := range paths {
+			zipArgs = append(zipArgs, val)
+		}
+		appName = strings.Split(zipArgs[2], "/")[1]
+		if err = exec.Command("zip", zipArgs...).Run(); err != nil {
+			return fmt.Errorf("error deleting from zipfile: %w", err)
+		}
+	} else {
+		for _, val := range paths {
+			appName = strings.Split(val, "/")[1] // yeah i couldnt figure out another way to do this lmao
+			break
+		}
 	}
 
 	//

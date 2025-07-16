@@ -13,6 +13,8 @@ import (
 	"github.com/blacktop/go-macho/types"
 )
 
+var ErrNoCodeDirectories = errors.New("no code directories")
+
 var dylibCmdSize = binary.Size(types.DylibCmd{})
 
 func injectLC(fsPath, bundleID, lcName, tmpdir string) error {
@@ -102,15 +104,24 @@ func addDylibCommand(m *macho.File, name, bundleID string) error {
 		Name: name,
 	})
 	if cs != nil {
-		if bundleID == "" {
-			bundleID = "fyi.zxcvbn.ipapatch.app" // shouldnt happen, but best to be safe
+		if len(cs.CodeDirectories) == 0 {
+			return ErrNoCodeDirectories
 		}
-		m.CodeSign(&codesign.Config{
-			Flags:           cstypes.ADHOC,
-			ID:              bundleID,
+		cd := cs.CodeDirectories[0]
+		if cd.ID == "" {
+			cd.ID = bundleID
+			if bundleID == "" {
+				cd.ID = "fyi.zxcvbn.ipapatch.app" // shouldnt happen, but best to be safe
+			}
+		}
+
+		// https://github.com/blacktop/go-macho/blob/0247374e8fc354e575b62401a6ec2195d1fae49f/export.go#L265
+		return m.CodeSign(&codesign.Config{
+			Flags:           cd.Header.Flags | cstypes.ADHOC,
+			ID:              cd.ID,
+			TeamID:          cd.TeamID,
 			Entitlements:    []byte(cs.Entitlements),
 			EntitlementsDER: cs.EntitlementsDER,
-			SpecialSlots:    []cstypes.SpecialSlot{{Hash: cstypes.EmptySha256Slot}}, // i think this was needed, found it in an old project
 		})
 	}
 	return nil
