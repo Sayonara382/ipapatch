@@ -24,6 +24,10 @@ func injectLC(fsPath, bundleID, lcName, tmpdir string) error {
 
 		var slices []string
 		for _, arch := range fat.Arches {
+			if arch.SubCPU > 2 {
+				continue // skip armv7 and other unsupported architectures
+			}
+
 			if err = addDylibCommand(arch.File, lcName, bundleID); err != nil {
 				return err
 			}
